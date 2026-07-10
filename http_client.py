@@ -2,6 +2,9 @@ import httpx
 
 from dto import VacancyPreview
 from core import conf
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class HHClient:
@@ -38,8 +41,8 @@ class HHClient:
                 },
             )
             if response.is_error:
-                print(response.status_code)
-                print(response.text)
+                log.debug(response.status_code)
+                log.debug(response.text)
             response.raise_for_status()
 
             payload = response.json()
