@@ -1,14 +1,23 @@
 import asyncio
 from functools import partial
+import logging
+
+log = logging.getLogger(__name__)
 
 
-async def get_vacancies(client, urls: list[str], batch_size: int = 20, static: bool = False):
+async def get_vacancies(client, urls: list[str], batch_size: int = 20, static: bool = False, **params):
     tasks_to_run = [
-        partial(client.get_vacancies, url)
+        partial(client.get_vacancies, url, **params)
         for url in urls
     ]
 
-    return await execute_batch(tasks_to_run, batch_size, static)
+    batches = await execute_batch(tasks_to_run, batch_size, static)
+
+    return [
+        vacancy
+        for batch in batches
+        for vacancy in batch
+    ]
 
 
 
@@ -44,6 +53,7 @@ async def execute_batch(factories: list, batch_size: int = 10, static: bool = Fa
             await asyncio.gather(*pending_tasks, return_exceptions=True)
         if rate_limit_hit:
             max_size = successful_count or 1
+            log.debug("max request size: %s", max_size)
         pending = items_to_retry + pending[batch_size:]
         batch_size = max_size if max_size is not None else batch_size + 2
         sleep_time = 2 if rate_limit_hit else 1

@@ -24,25 +24,33 @@ class HHClient:
     async def close(self) -> None:
         await self._client.aclose()
 
-    async def get_vacancies(
-        self,
-        query: str,
-    ) -> list[VacancyPreview]:
+    async def get_areas(self) -> list[dict]:
+        response = await self._client.get("/areas")
+        response.raise_for_status()
+        return response.json()
+
+
+    async def get_vacancies(self, query: str, area_id: int | None = None) -> list[VacancyPreview]:
         vacancies: list[VacancyPreview] = []
         page = 0
 
         while True:
-            response = await self._client.get(
-                "/vacancies",
-                params={
-                    "text": query,
-                    "page": page,
-                    "per_page": 100,
-                },
-            )
+            params = {
+                "text": query,
+                "page": page,
+                "per_page": 100,
+            }
+
+            if area_id is not None:
+                params["area"] = area_id
+
+            response = await self._client.get("/vacancies", params=params)
             if response.is_error:
-                log.debug(response.status_code)
-                log.debug(response.text)
+                log.warning(
+                    "Ошибка HH API: status=%s, body=%s",
+                    response.status_code,
+                    response.text,
+                )
             response.raise_for_status()
 
             payload = response.json()
