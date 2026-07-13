@@ -24,7 +24,6 @@ class Settings(BaseSettings):
         return ""
 
 
-
 def load_config() -> Settings:
     conf = Settings()  # type: ignore
     return conf

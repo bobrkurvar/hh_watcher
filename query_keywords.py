@@ -7,7 +7,7 @@ CORE_QUERIES = [
     "Бэкенд-разработчик",
     "Backend developer",
     "FastAPI",
-    "Flask"
+    "Flask",
 ]
 
 BROAD_QUERIES = [

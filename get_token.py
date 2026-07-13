@@ -12,7 +12,7 @@ async def get_app_token():
                 "grant_type": "client_credentials",
                 "client_id": conf.client_id,
                 "client_secret": conf.client_secret,
-            }
+            },
         )
         print("Статус ответа:", response.status_code)
 

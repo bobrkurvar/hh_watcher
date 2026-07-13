@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from utils import clean_html
+
 
 @dataclass
 class VacancyPreview:
-    id: str
+    id: int
     title: str
     url: str
     employer_name: str | None
@@ -13,16 +15,12 @@ class VacancyPreview:
     hidden: bool = False
 
     @classmethod
-    def from_api(
-        cls,
-        payload: dict,
-        query: str,
-    ) -> "VacancyPreview":
+    def from_api(cls, payload: dict, query: str) -> "VacancyPreview":
         employer = payload.get("employer") or {}
         snippet = payload.get("snippet") or {}
 
         return cls(
-            id=payload["id"],
+            id=int(payload["id"]),
             title=payload["name"],
             url=payload["alternate_url"],
             employer_name=employer.get("name"),
@@ -35,38 +33,25 @@ class VacancyPreview:
 
 @dataclass(slots=True)
 class VacancyDetails:
-    id: str
-    title: str
     description: str
-
-    employer_name: str | None
-    published_at: str | None
-
     salary_from: int | None
     salary_to: int | None
     salary_currency: str | None
-
     experience: str | None
     employment: str | None
     schedule: str | None
-
     key_skills: list[str]
     work_formats: list[str]
 
     @classmethod
-    def from_api(cls, payload: dict[str, ...]) -> "VacancyDetails":
-        employer = payload.get("employer") or {}
+    def from_api(cls, payload: dict) -> "VacancyDetails":
         salary = payload.get("salary") or {}
         experience = payload.get("experience") or {}
         employment = payload.get("employment") or {}
         schedule = payload.get("schedule") or {}
 
         return cls(
-            id=payload["id"],
-            title=payload["name"],
-            description=payload.get("description") or "",
-            employer_name=employer.get("name"),
-            published_at=payload.get("published_at"),
+            description=clean_html(payload.get("description") or ""),
             salary_from=salary.get("from"),
             salary_to=salary.get("to"),
             salary_currency=salary.get("currency"),
@@ -84,3 +69,20 @@ class VacancyDetails:
                 if work_format.get("name")
             ],
         )
+
+
+@dataclass
+class AIAnalysis:
+    explanation: str
+    confidence: float
+    is_relevant: bool
+    vacancy_id: int | None = None
+
+
+@dataclass
+class Vacancy:
+    preview: VacancyPreview
+    details: VacancyDetails
+    hidden: bool
+    id: int | None = None
+    ai_analysis: AIAnalysis | None = None

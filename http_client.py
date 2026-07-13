@@ -1,6 +1,6 @@
 import httpx
 
-from dto import VacancyPreview
+from dto import VacancyPreview, VacancyDetails
 from core import conf
 import logging
 
@@ -29,8 +29,21 @@ class HHClient:
         response.raise_for_status()
         return response.json()
 
+    async def get_vacancy(self, vacancy_id: int) -> VacancyDetails:
+        response = await self._client.get(f"/vacancies/{vacancy_id}")
+        if response.is_error:
+            log.warning(
+                "Ошибка получения вакансии %s: " "status=%s, body=%s",
+                vacancy_id,
+                response.status_code,
+                response.text,
+            )
+        response.raise_for_status()
+        return VacancyDetails.from_api(response.json())
 
-    async def get_vacancies(self, query: str, area_id: int | None = None) -> list[VacancyPreview]:
+    async def get_vacancies(
+        self, query: str, area_id: int | None = None
+    ) -> list[VacancyPreview]:
         vacancies: list[VacancyPreview] = []
         page = 0
 

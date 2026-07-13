@@ -1,25 +1,23 @@
 import asyncio
 from functools import partial
 import logging
+from dto import VacancyPreview
 
 log = logging.getLogger(__name__)
 
 
-async def get_vacancies(client, urls: list[str], batch_size: int = 20, static: bool = False, **params):
-    tasks_to_run = [
-        partial(client.get_vacancies, url, **params)
-        for url in urls
-    ]
-
-    batches = await execute_batch(tasks_to_run, batch_size, static)
-
-    return [
-        vacancy
-        for batch in batches
-        for vacancy in batch
-    ]
+async def get_vacancies(client, urls: list[str], batch_size: int = 10, **params):
+    tasks_to_run = [partial(client.get_vacancies, url, **params) for url in urls]
+    batches = await execute_batch(tasks_to_run, batch_size, static=False)
+    return [vacancy for batch in batches for vacancy in batch]
 
 
+async def get_vacancies_details(client, vacancies: list[VacancyPreview], batch_size: int = 10):
+    async def exact_with_context(vacancy: VacancyPreview):
+        return vacancy, await client.get_vacancy(vacancy.id)
+
+    factories = [partial(exact_with_context, vacancy) for vacancy in vacancies]
+    return await execute_batch(factories, batch_size=batch_size, static=True)
 
 
 async def execute_batch(factories: list, batch_size: int = 10, static: bool = False):
@@ -31,12 +29,16 @@ async def execute_batch(factories: list, batch_size: int = 10, static: bool = Fa
     pending, successful_results = factories, []
     max_size = batch_size if static else None
     while pending:
-        successful_count, rate_limit_hit, items_to_retry, batch = 0, False, [], pending[:batch_size]
-        task_to_factory = {
-            asyncio.create_task(factory()): factory
-            for factory in batch
-        }
-        done, pending_tasks = await asyncio.wait(task_to_factory.keys(), return_when=asyncio.FIRST_EXCEPTION)
+        successful_count, rate_limit_hit, items_to_retry, batch = (
+            0,
+            False,
+            [],
+            pending[:batch_size],
+        )
+        task_to_factory = {asyncio.create_task(factory()): factory for factory in batch}
+        done, pending_tasks = await asyncio.wait(
+            task_to_factory.keys(), return_when=asyncio.FIRST_EXCEPTION
+        )
         for task in done:
             try:
                 result = task.result()

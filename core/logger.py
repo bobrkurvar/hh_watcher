@@ -31,6 +31,7 @@ def setup_logging():
 
     logger.addFilter(IgnoreFilter())
 
+
 def setup_test_logging():
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
