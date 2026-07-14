@@ -7,7 +7,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class HHClient:
+class HttpClient:
     BASE_URL = "https://api.hh.ru"
 
     def __init__(self) -> None:

@@ -2,7 +2,7 @@
 
 class KeyProvider:
     def __init__(self):
-        self.filepath = "keys.txt"
+        self.filepath = "../keys.txt"
         self._keys = []
         self._load_keys()
 

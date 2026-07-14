@@ -12,11 +12,11 @@ async def get_vacancies(client, urls: list[str], batch_size: int = 10, **params)
     return [vacancy for batch in batches for vacancy in batch]
 
 
-async def get_vacancies_details(client, vacancies: list[VacancyPreview], batch_size: int = 10):
+async def get_vacancies_details(client, previews: list[VacancyPreview], batch_size: int = 10):
     async def exact_with_context(vacancy: VacancyPreview):
         return vacancy, await client.get_vacancy(vacancy.id)
 
-    factories = [partial(exact_with_context, vacancy) for vacancy in vacancies]
+    factories = [partial(exact_with_context, preview) for preview in previews]
     return await execute_batch(factories, batch_size=batch_size, static=True)
 
 

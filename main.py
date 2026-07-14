@@ -1,6 +1,6 @@
 import asyncio
-from http_client import HHClient
-from query_keywords import SEARCH_QUERIES
+from adapters.http_client import HHClient
+from literals.query_keywords import SEARCH_QUERIES
 from pipeline.exact import collect_vacancies_pipeline
 from core.logger import setup_logging
 

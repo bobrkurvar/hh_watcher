@@ -1,6 +1,6 @@
 import re
 from dto import VacancyPreview
-from filter_keywords import CONTENT_KEYWORDS, EXCLUDED_KEYWORDS
+from literals.filter_keywords import CONTENT_KEYWORDS, EXCLUDED_KEYWORDS
 from utils import clean_html
 
 import logging

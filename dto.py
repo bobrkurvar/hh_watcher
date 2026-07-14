@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from utils import clean_html
+from datetime import datetime
 
 
 @dataclass
@@ -8,7 +9,7 @@ class VacancyPreview:
     title: str
     url: str
     employer_name: str | None
-    published_at: str | None
+    published_at: str | datetime | None
     requirement: str | None
     responsibility: str | None
     query_hits: set[str]
@@ -82,7 +83,7 @@ class AIAnalysis:
 @dataclass
 class Vacancy:
     preview: VacancyPreview
-    details: VacancyDetails
-    hidden: bool
+    is_hidden: bool
     id: int | None = None
+    details: VacancyDetails | None = None
     ai_analysis: AIAnalysis | None = None
