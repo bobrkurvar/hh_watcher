@@ -17,7 +17,6 @@ COMPILED_INCLUDE_PATTERNS = [
 ]
 
 
-
 def apply_soft_filter(raw_text: str):
     clean_text = clean_html(raw_text)
     found_stop_word = None
@@ -37,10 +36,14 @@ def apply_soft_filter(raw_text: str):
 
 
 def passes_vacancy_preview_filter(vacancy: VacancyPreview) -> bool:
-    raw_text = (
-        f"{vacancy.title} {vacancy.requirement or ''} {vacancy.responsibility or ''}"
-    )
-    return apply_soft_filter(raw_text)
+    raw_text_parts = [
+        vacancy.title,
+        vacancy.requirement or "",
+        vacancy.responsibility or "",
+        *vacancy.query_hits,
+    ]
+
+    return apply_soft_filter(" ".join(raw_text_parts))
 
 
 def passes_vacancy_details_filter(title: str, description: str, key_skills: list[str]):

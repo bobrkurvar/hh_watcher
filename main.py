@@ -1,25 +1,16 @@
 import asyncio
-from adapters.http_client import HHClient
-from literals.query_keywords import SEARCH_QUERIES
-from pipeline.exact import collect_vacancies_pipeline
+from desktop_app import App
+from backend import AsyncBackend
 from core.logger import setup_logging
+from literals.search_keywords import SEARCH_QUERIES
 
 setup_logging()
 
-
-async def main() -> None:
-    client = HHClient()
-
-    try:
-        vacancies = await collect_vacancies_pipeline(
-            client=client, queries=SEARCH_QUERIES
-        )
-    finally:
-        await client.close()
-
-    print("\n--- Итог ---")
-    print(f"Уникальных вакансий: {len(vacancies)}")
-
+async def main():
+    backend = AsyncBackend(queries=SEARCH_QUERIES)
+    app = App(backend=backend)
+    app.mainloop()
+    backend.stop()
 
 if __name__ == "__main__":
     asyncio.run(main())

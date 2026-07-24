@@ -91,7 +91,7 @@ class AsyncBackend:
             async with self.uow:
                 return await self.uow.db.read(
                     Vacancy,
-                    hidden=False,
+                    is_hidden=False,
                     loaded="ai_analysis",
                 )
 

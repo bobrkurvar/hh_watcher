@@ -2,6 +2,7 @@ import asyncio
 from functools import partial
 import logging
 from dto import VacancyPreview
+from exceptions import RateLimitError, ResourceNotFoundError
 
 log = logging.getLogger(__name__)
 
@@ -20,44 +21,50 @@ async def get_vacancies_details(client, previews: list[VacancyPreview], batch_si
     return await execute_batch(factories, batch_size=batch_size, static=True)
 
 
+
+
 async def execute_batch(factories: list, batch_size: int = 10, static: bool = False):
-    # tasks_to_run = [
-    #     partial(client.get_vacancy, vac.id)
-    #     for vac in vacancies
-    # ]
-    # такого рода фабрики передаются в cors потому что при cancel корутина умирает
-    pending, successful_results = factories, []
+    pending = factories
+    successful_results = []
+
     max_size = batch_size if static else None
+
     while pending:
-        successful_count, rate_limit_hit, items_to_retry, batch = (
-            0,
-            False,
-            [],
-            pending[:batch_size],
+        successful_count = 0
+        rate_limit_hit = False
+        items_to_retry = []
+
+        batch = pending[:batch_size]
+
+        results = await asyncio.gather(
+            *(factory() for factory in batch),
+            return_exceptions=True,
         )
-        task_to_factory = {asyncio.create_task(factory()): factory for factory in batch}
-        done, pending_tasks = await asyncio.wait(
-            task_to_factory.keys(), return_when=asyncio.FIRST_EXCEPTION
-        )
-        for task in done:
-            try:
-                result = task.result()
+
+        for factory, result in zip(batch, results):
+            if isinstance(result, RateLimitError):
+                rate_limit_hit = True
+                items_to_retry.append(factory)
+
+            elif isinstance(result, Exception):
+                log.warning(
+                    "Ошибка выполнения задачи %s: %s",
+                    factory,
+                    result,
+                    exc_info=(type(result), result, result.__traceback__),
+                )
+
+            else:
                 successful_results.append(result)
                 successful_count += 1
-            except Exception:
-                rate_limit_hit = True
-                items_to_retry.append(task_to_factory[task])
-        for task in pending_tasks:
-            task.cancel()
-            items_to_retry.append(task_to_factory[task])
-        # Гасим предупреждения об отмененных задачах - после cancel сами запросы не выполнятся, просто graceful shutdown для cancell
-        if pending_tasks:
-            await asyncio.gather(*pending_tasks, return_exceptions=True)
+
         if rate_limit_hit:
             max_size = successful_count or 1
-            log.debug("max request size: %s", max_size)
+
         pending = items_to_retry + pending[batch_size:]
         batch_size = max_size if max_size is not None else batch_size + 2
-        sleep_time = 2 if rate_limit_hit else 1
+        sleep_time = 1 if rate_limit_hit else 0.3
         await asyncio.sleep(sleep_time)
+
     return successful_results
+

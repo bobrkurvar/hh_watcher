@@ -1,62 +1,23 @@
 from google import genai
 from pydantic import BaseModel, Field
 from dto import AIAnalysis, Vacancy
-from literals import SYSTEM_INSTRUCTION
+from literals import SYSTEM_INSTRUCTION, TARGET_TECHNOLOGIES, CONFIDENCE, IS_RELEVANT, EXPLANATION
 import asyncio
 import logging
-from files import KeyProvider
+from .files import KeyProvider
 import textwrap
 
 log = logging.getLogger(__name__)
 
-TARGET_TECHNOLOGIES = [
-    "Python",
-    "FastAPI",
-    "Django",
-    "Flask",
-    "SQLAlchemy",
-    "Alembic",
-    "PostgreSQL",
-    "Redis",
-    "TaskIQ",
-    "Celery",
-    "REST API",
-    "Docker",
-    "Nginx",
-    "pytest",
-    "asyncio",
-]
 
 class GeminiSchema(BaseModel):
-    batch_index: int = Field(
-        description="Номер вакансии из поля ID во входной пачке."
-    )
-
-    is_relevant: bool = Field(
-        description=(
-            "True, если вакансия подходит Python backend-разработчику "
-            "по основному стеку, обязанностям и уровню требований. "
-            "False, если основная работа не соответствует профилю."
-        )
-    )
-
-    explanation: str = Field(
-        description=(
-            "Кратко объясни решение на русском языке. "
-            "Укажи решающие требования, технологии и обязанности. "
-            "Не приписывай вакансии информацию, которой нет в тексте."
-        )
-    )
-
+    batch_index: int = Field(description="Номер вакансии из поля ID во входной пачке.")
+    is_relevant: bool = Field(description=IS_RELEVANT)
+    explanation: str = Field(description=EXPLANATION)
     confidence: float = Field(
         ge=0.0,
         le=1.0,
-        description=(
-            "Уверенность от 0.0 до 1.0 в правильности значения is_relevant. "
-            "0.90–1.00 используй только при прямых и однозначных признаках. "
-            "Если требования противоречивы или описание неполное, "
-            "используй значение ниже 0.90."
-        )
+        description=CONFIDENCE
     )
 
 
